@@ -1,0 +1,98 @@
+*datetime.txt*  Plugin for datetime manipulations in pure Vim Script.
+
+Author: https://github.com/prince-goulash
+
+Shamelessly ported from the source code of the Python datetime package:
+        https://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
+
+INTRODUCTION                                    *datetime*
+
+A datetime object in Vim is a list of 6 integers in the following order:
+
+    [ Year, Month, Day, Hour, Minute, Second ]
+
+This plugin provides functions to convert between strings and datetime
+objects. There are also functions to manipulate datetime objects.
+
+
+FUNCTIONS                                       *datetime-functions*
+
+  datetime#strptime({string},{format})          *datetime#strptime()*
+      Convert a string into a datetime object according to {format}.
+      See |datetime-format| for formatting directives.
+
+  datetime#strftime({dt},{format})              *datetime#strftime()*
+      Convert a datetime object into a string according to {format}.
+      See |datetime-format| for formatting directives.
+
+  datetime#add_day({dt},{inc})                  *datetime#add_day()*
+      Add a number of days onto a datetime. If a 6-element datetime is
+      supplied, the time (last 3 elements) are unchanged.
+
+  datetime#add_second({dt},{inc})               *datetime#add_second()*
+      Add a number of seconds onto a datetime. Of course, this might also
+      change the date.
+
+  datetime#compare({dt1},{dt2})                 *datetime#compare()*
+      A comparator function to be used for sorting datetimes. Returns the
+      following:
+            {dt1} == {dt2}  :  0
+            {dt1} >  {dt2}  :  1
+            {dt1} <  {dt2}  : -2
+
+  datetime#delta({dt1},{dt2})                   *datetime#delta()*
+      Returns the difference between two datetime objects.
+
+  datetime#month_range({dt})                    *datetime#month_range()*
+      Return a list of two datetimes corresponding to the month
+      containing the supplied datetime.   
+
+  datetime#now()                                *datetime#now()*
+      Return the datetime corresponding to Vim's native |strftime()|.
+      If the time is not required use datetime#now()[0:2].
+
+  datetime#unixtime({dt})                       *datetime#unixtime()*
+      Convert a datetime to unix time. This is an integer representing the
+      number of seconds since the epoch: [ 1970, 1, 1, 0, 0, 0 ].
+
+  datetime#week_range({dt})                     *datetime#week_range()*
+      Return a list of two datetimes corresponding to the Monday - Friday
+      range containing the supplied datetime.   
+
+
+FORMATTING DIRECTIVES                           *datetime-format*
+
+  %y    Year without century as a zero-padded decimal      00,...,99
+  %Y    Year with century as a decimal                     1970,2001
+  %p    AM or PM                                           AM,PM
+  %b    Month as abbreviated name                          Jan,Feb
+  %B    Month as full name                                 January,April
+  %m    Month as zero-padded decimal                       01,...,12
+  %d    Day of the month as a zero-padded decimal          01,...,31
+  %a    Weekday as abbreviated name                        Sun,Mon
+  %A    Weekday as full name                               Sunday,Monday
+  %j    Day of the year as a zero-padded decimal           001,...,366
+  %U    Week number of year as a zero-padded decimal       00,...,53
+  %w    Weekday as a decimal number                        0,1,...,6
+  %W    Week number of year                                00,01,...,53
+  %H    Hour (24-hour clock) as a zero-padded decimal      00,01,...,23
+  %I    Hour (12-hour clock) as a zero-padded decimal      01,02,...,12
+  %M    Minute as a zero-padded decimal                    00,01,...,59
+  %S    Second as a zero-padded decimal                    00,01,...,59
+
+  %%    Literal %                                          %
+    
+  %c    Equivalent to %a %b %d %Y                          Wed May 18 2016
+  %x    Equivalent to %d/%m/%Y                             18/05/2016
+  %X    Equivalent to %H:%M:%S                             19:14:01
+
+
+LIMITATIONS                                     *datetime-limitations*
+
+Currently divisions of time smaller than a second are not supported. This
+would require allowing the last element of a datetime element to be an 
+integer, rather than a real.
+
+Leap seconds are not considered.
+
+vim:tw=78:ts=8:ft=help
