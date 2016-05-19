@@ -358,16 +358,18 @@
         endif
         if a:tag ==# '%U'
             " Week number of year (Sunday as first day of week).
+            let day1 = s:day_nr(s:day_of_date([a:date[0],1,1]))-1
             let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
-            return s:pad( day_of_yr / 7, '00')
+            return s:pad( (day_of_yr+day1) / 7, '00')
         endif
         if a:tag ==# '%w'
             return s:date2ord(a:date) % 7
         endif
         if a:tag ==# '%W'
             " Week number of year (Monday as first day of week).
+            let day1 = s:day_nr(s:day_of_date([a:date[0],1,1]))-2
             let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
-            return s:pad( day_of_yr % 7, '00')
+            return s:pad( (day_of_yr+day1) / 7, '00')
         endif
         if len(a:date) == 3 | return '' | endif
         if a:tag ==# '%H'
