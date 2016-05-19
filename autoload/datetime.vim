@@ -206,7 +206,7 @@
         let new_dt = copy(dt)
         let new_dt[5] += a:inc
 
-        echo new_dt
+        " echo new_dt
 
         if new_dt[5] > 59
             let new_dt[4] += new_dt[5] / 60
@@ -246,8 +246,8 @@
     endfunction
     "}}}
 
-    "{{{ function: s:decode_element
-    function! s:decode_element(tag)
+    "{{{ function: s:regex_of_tag
+    function! s:regex_of_tag(tag)
         " Returns the regex pattern for the tag.
         if a:tag ==# '%Y'
             return '\d\d\d\d'
@@ -357,6 +357,7 @@
             return s:pad(day_of_yr,'000')
         endif
         if a:tag ==# '%U'
+            " Week number of year (Sunday as first day of week).
             let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
             return s:pad( day_of_yr / 7, '00')
         endif
@@ -364,6 +365,7 @@
             return s:date2ord(a:date) % 7
         endif
         if a:tag ==# '%W'
+            " Week number of year (Monday as first day of week).
             let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
             return s:pad( day_of_yr % 7, '00')
         endif
@@ -446,11 +448,11 @@
         " echo fmt
         for xtag in map(split(tags,'\.*'),'"%".v:val')
             if fmt =~# xtag
-                let dec = s:decode_element(xtag)
+                let regex = s:regex_of_tag(xtag)
                 call add(tagmap,match(fmt,'\C'.xtag))
                 call add(requested,xtag)
-                let dec = escape( '\(' . dec . '\)', '\' )
-                let fmt = substitute(fmt,'\C'.xtag,dec,'g')
+                let regex = escape( '\(' . regex . '\)', '\' )
+                let fmt = substitute(fmt, '\C'.xtag, regex, 'g')
             endif
         endfor
         let fmt = substitute(fmt,'__VIM__DUMMY__PERCENT__','%','g')
@@ -586,7 +588,7 @@
     function! datetime#unixtime(date)
         " Convert to number of seconds since [ 1970, 1, 1, 0, 0, 0 ]
         let epoch = [ 1970, 1, 1, 0, 0, 0 ]
-        if s:compare(epoch,a:date) > 0
+        if datetime#compare(epoch,a:date) > 0
             return -1
         else
             let delta = datetime#delta(epoch,a:date)
@@ -614,4 +616,15 @@
         return s:strftime(a:date,fmt)
     endfunction
     "}}}
+    "{{{ function: datetime#reformat
+    function! datetime#reformat(str,fmt1,fmt2)
+        " Receives a string in fmt1, returns a string in fmt2.
+        let str  = empty(a:str)  ? "."  : a:str
+        let fmt1 = empty(a:fmt1) ? "%c" : a:fmt1
+        let fmt2 = empty(a:fmt2) ? "%c" : a:fmt2
+        let date = datetime#strptime(str,fmt1)
+        return datetime#strftime(date,fmt2)
+    endfunction
+    "}}}
 
+    " vim:tw=78:ts=8:ft=vim:fmr="{{{,"}}}:fdm=marker

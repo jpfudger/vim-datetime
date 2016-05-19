@@ -7,12 +7,12 @@ Shamelessly ported from the source code of the Python datetime package:
 
 INTRODUCTION                                    *datetime*
 
-A datetime object in Vim is a list of 6 integers in the following order:
-
-    [ Year, Month, Day, Hour, Minute, Second ]
-
-This plugin provides functions to convert between strings and datetime
-objects. There are also functions to manipulate datetime objects.
+  A datetime object in Vim is a list of 6 integers in the following order:
+  
+      [ Year, Month, Day, Hour, Minute, Second ]
+  
+  This plugin provides functions to convert between strings and datetime
+  objects. There are also functions to manipulate datetime objects.
 
 
 FUNCTIONS                                       *datetime-functions*
@@ -25,6 +25,11 @@ FUNCTIONS                                       *datetime-functions*
       Convert a datetime object into a string according to {format}.
       See |datetime-format| for formatting directives.
 
+  datetime#reformat({str},{format1},{format2})  *datetime#reformat()*
+      Receive and string in {format1} and return a string in {format2}.
+      This is equivalent to using |datetime#strptime()| followed by
+      |datetime#strftime()|.
+
   datetime#add_day({dt},{inc})                  *datetime#add_day()*
       Add a number of days onto a datetime. If a 6-element datetime is
       supplied, the time (last 3 elements) are unchanged.
@@ -34,14 +39,17 @@ FUNCTIONS                                       *datetime-functions*
       change the date.
 
   datetime#compare({dt1},{dt2})                 *datetime#compare()*
-      A comparator function to be used for sorting datetimes. Returns the
-      following:
+      A comparator function which may be used for sorting datetimes.
+      It returns the standard Vim difference convention:
             {dt1} == {dt2}  :  0
             {dt1} >  {dt2}  :  1
             {dt1} <  {dt2}  : -2
 
   datetime#delta({dt1},{dt2})                   *datetime#delta()*
-      Returns the difference between two datetime objects.
+      Returns the difference between two datetime objects. 
+      A delta is a 2-element list consisting of the date difference (in days)
+      followed by the time difference (in seconds). 
+      One or both of these elements may be negative.
 
   datetime#month_range({dt})                    *datetime#month_range()*
       Return a list of two datetimes corresponding to the month
@@ -62,23 +70,23 @@ FUNCTIONS                                       *datetime-functions*
 
 FORMATTING DIRECTIVES                           *datetime-format*
 
-  %y    Year without century as a zero-padded decimal      00,...,99
+  %y    Year without century                               00,...,99
   %Y    Year with century as a decimal                     1970,2001
   %p    AM or PM                                           AM,PM
   %b    Month as abbreviated name                          Jan,Feb
   %B    Month as full name                                 January,April
   %m    Month as zero-padded decimal                       01,...,12
-  %d    Day of the month as a zero-padded decimal          01,...,31
+  %d    Day of the month                                   01,...,31
   %a    Weekday as abbreviated name                        Sun,Mon
   %A    Weekday as full name                               Sunday,Monday
-  %j    Day of the year as a zero-padded decimal           001,...,366
-  %U    Week number of year as a zero-padded decimal       00,...,53
-  %w    Weekday as a decimal number                        0,1,...,6
-  %W    Week number of year                                00,01,...,53
-  %H    Hour (24-hour clock) as a zero-padded decimal      00,01,...,23
-  %I    Hour (12-hour clock) as a zero-padded decimal      01,02,...,12
-  %M    Minute as a zero-padded decimal                    00,01,...,59
-  %S    Second as a zero-padded decimal                    00,01,...,59
+  %j    Day of the year                                    001,...,366
+  %w    Weekday as a decimal number                        0,...,6
+  %U    Week number of year (starting on Sunday)           00,...,53
+  %W    Week number of year (starting on Monday)           00,...,53
+  %H    Hour (24-hour clock)                               00,...,23
+  %I    Hour (12-hour clock)                               01,...,12
+  %M    Minute                                             00,...,59
+  %S    Second                                             00,...,59
 
   %%    Literal %                                          %
     
@@ -89,10 +97,19 @@ FORMATTING DIRECTIVES                           *datetime-format*
 
 LIMITATIONS                                     *datetime-limitations*
 
-Currently divisions of time smaller than a second are not supported. This
-would require allowing the last element of a datetime element to be an 
-integer, rather than a real.
+  > Currently divisions of time smaller than a second are not supported. This
+    would require allowing the last element of a datetime element to be an 
+    integer, rather than a real. Alternatively a 7th element could be
+    supported for centiseconds or milliseconds.
 
-Leap seconds are not considered.
+  > Leap seconds are not considered.
+
+  > Locales are not supported.
+
+
+CHANGELOG                                       *datetime-changelog*
+
+  18-May-2016     First release.
+  19-May-2016     Add |datetime#reformat()| and improve docs.
 
 vim:tw=78:ts=8:ft=help
