@@ -1,28 +1,36 @@
 *datetime.txt*  Plugin for datetime manipulations in pure Vim Script.
 
-Author: https://github.com/prince-goulash
 
-Shamelessly ported from the source code of the Python datetime package:
-        https://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
+    VIM-DATETIME
+
+
 
 INTRODUCTION                                    *datetime*
 
-  A datetime object in Vim is a list of 6 integers in the following order:
+  A "datetime" object in Vim is a dictionary containing six keys:
   
-      [ Year, Month, Day, Hour, Minute, Second ]
-  
-  This plugin provides functions to convert between strings and datetime
-  objects. There are also functions to manipulate datetime objects.
+      { 'year', 'month', 'day', 'hour', 'minute', 'second' }
+
+  The value of each key is assumed be an integer, which has the consequence
+  that divisions of time smaller than a second are not supported.
+
+  Functions are provided to convert between datetimes and formatted strings,
+  using familiar formatting directives. There are also functions to
+  manipulate datetime objects themselves.
 
 
 FUNCTIONS                                       *datetime-functions*
+ 
+  datetime#init({Y},{m},{d},{H},{M},{S})        *datetime#init()*
+      Construct a datetime from a set of integers.
+      The time arguments ({H},{M},{S}) are optional.
 
   datetime#strptime({string},{format})          *datetime#strptime()*
-      Convert a string into a datetime object according to {format}.
+      Convert a string into a datetime according to {format}.
       See |datetime-format| for formatting directives.
 
   datetime#strftime({dt},{format})              *datetime#strftime()*
-      Convert a datetime object into a string according to {format}.
+      Convert a datetime into a string according to {format}.
       See |datetime-format| for formatting directives.
 
   datetime#reformat({str},{format1},{format2})  *datetime#reformat()*
@@ -46,7 +54,7 @@ FUNCTIONS                                       *datetime-functions*
             {dt1} <  {dt2}  : -2
 
   datetime#delta({dt1},{dt2})                   *datetime#delta()*
-      Returns the difference between two datetime objects. 
+      Returns the difference between two datetimes.
       A delta is a 2-element list consisting of the date difference (in days)
       followed by the time difference (in seconds). 
       One or both of these elements may be negative.
@@ -57,7 +65,6 @@ FUNCTIONS                                       *datetime-functions*
 
   datetime#now()                                *datetime#now()*
       Return the datetime corresponding to Vim's native |strftime()|.
-      If the time is not required use datetime#now()[0:2].
 
   datetime#unixtime({dt})                       *datetime#unixtime()*
       Convert a datetime to unix time. This is an integer representing the
@@ -70,46 +77,50 @@ FUNCTIONS                                       *datetime-functions*
 
 FORMATTING DIRECTIVES                           *datetime-format*
 
-  %y    Year without century                               00,...,99
-  %Y    Year with century as a decimal                     1970,2001
-  %p    AM or PM                                           AM,PM
-  %b    Month as abbreviated name                          Jan,Feb
-  %B    Month as full name                                 January,April
-  %m    Month as zero-padded decimal                       01,...,12
-  %d    Day of the month                                   01,...,31
-  %a    Weekday as abbreviated name                        Sun,Mon
-  %A    Weekday as full name                               Sunday,Monday
-  %j    Day of the year                                    001,...,366
-  %w    Weekday as a decimal number                        0,...,6
-  %U    Week number of year (starting on Sunday)           00,...,53
-  %W    Week number of year (starting on Monday)           00,...,53
-  %H    Hour (24-hour clock)                               00,...,23
-  %I    Hour (12-hour clock)                               01,...,12
-  %M    Minute                                             00,...,59
-  %S    Second                                             00,...,59
+  %y    Year without century                 00,...,99        *datetime-%y*
+  %Y    Year with century as a decimal       1970,2001        *datetime-%Y*
+  %p    AM or PM                             AM,PM            *datetime-%p*
+  %b    Month as abbreviated name            Jan,Feb          *datetime-%b*
+  %B    Month as full name                   January,April    *datetime-%B*
+  %m    Month as zero-padded decimal         01,...,12        *datetime-%m*
+  %d    Day of the month                     01,...,31        *datetime-%d*
+  %a    Weekday as abbreviated name          Sun,Mon          *datetime-%a*
+  %A    Weekday as full name                 Sunday,Monday    *datetime-%A*
+  %j    Day of the year                      001,...,366      *datetime-%j*
+  %w    Weekday as a decimal number          0,...,6          *datetime-%w*
+  %U    Week number of year (start Sunday)   00,...,53        *datetime-%U*
+  %W    Week number of year (start Monday)   00,...,53        *datetime-%W*
+  %H    Hour (24-hour clock)                 00,...,23        *datetime-%H*
+  %I    Hour (12-hour clock)                 01,...,12        *datetime-%I*
+  %M    Minute                               00,...,59        *datetime-%M*
+  %S    Second                               00,...,59        *datetime-%S*
+  %s    Seconds since the Unix epoch         1463598841       *datetime-%s*
 
-  %%    Literal %                                          %
-    
-  %c    Equivalent to %a %b %d %Y                          Wed May 18 2016
-  %x    Equivalent to %d/%m/%Y                             18/05/2016
-  %X    Equivalent to %H:%M:%S                             19:14:01
+  %%    Literal %                            %                *datetime-%%*
+
+  %x    Equivalent to %d-%m-%Y               18-05-2016       *datetime-%x*
+  %X    Equivalent to %H:%M:%S               19:14:01         *datetime-%X*
+  %c    Equivalent to %x %X                                   *datetime-%c*
 
 
 LIMITATIONS                                     *datetime-limitations*
 
-  > Currently divisions of time smaller than a second are not supported. This
-    would require allowing the last element of a datetime element to be an 
-    integer, rather than a real. Alternatively a 7th element could be
-    supported for centiseconds or milliseconds.
+  Currently divisions of time smaller than a second are not supported. This
+  would require allowing the value of the 'second' key to be a real, rather
+  than an integer. Alternatively another integer-valued key could be added,
+  representing centi-/milli-/micro-seconds.
 
-  > Leap seconds are not considered.
-
-  > Locales are not supported.
+  Leap seconds and locales are not supported.
 
 
 CHANGELOG                                       *datetime-changelog*
 
+  Git Source: https://github.com/prince-goulash
+  Shamelessly ported from the source code of the Python datetime package:
+    https://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
+
   18-May-2016     First release.
-  19-May-2016     Add |datetime#reformat()| and improve docs.
+  19-May-2016     Add |datetime#reformat()|.
+  20-May-2016     Change list do dictionary and add |datetime#init()|.
 
 vim:tw=78:ts=8:ft=help

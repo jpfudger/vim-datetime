@@ -2,11 +2,25 @@
     " Name:   datetime.vim
     " Author: Jonathan Fudger
     " Date:   17 May 2016
-    " Ported from the Python datetime package implementation
+    " Shamelessly ported from the Python datetime package implementation
     " https://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
 
+    if exists('g:loaded_datetime') || &compatible
+        finish
+    endif
     let g:loaded_datetime = 1
-
+    
+    "{{{ function: s:init_datetime
+    function! s:init_datetime(...)
+        return { 'year'   : a:0 > 0 ? a:1 : 0,
+               \ 'month'  : a:0 > 1 ? a:2 : 0,
+               \ 'day'    : a:0 > 2 ? a:3 : 0,
+               \ 'hour'   : a:0 > 3 ? a:4 : 0,
+               \ 'minute' : a:0 > 4 ? a:5 : 0,
+               \ 'second' : a:0 > 5 ? a:6 : 0,
+               \ }
+    endfunction
+    "}}}
     "{{{ function: s:pad
     function! s:pad(nr,padding)
         " Converts an int to a char-padded string.
@@ -18,25 +32,15 @@
     "}}}
     "{{{ function: s:validate_date
     function! s:validate_date(date)
-        " Constructs a 6-element datetime.
-        let date = a:date
-        if type(date) == 1 " If it's a string - try and convert it.
-            return s:strptime_auto(date)
-        elseif len(date) == 1
-            return [ date[0], 0, 0, 0, 0, 0 ]
-        elseif len(date) == 2
-            return [ date[0], date[1], 0, 0, 0, 0 ]
-        elseif len(date) == 3
-            return [ date[0], date[1], date[2], 0, 0, 0 ]
-        elseif len(date) == 4
-            return [ date[0], date[1], date[2], date[3], 0, 0 ]
-        elseif len(date) == 5
-            return [ date[0], date[1], date[2], date[3], date[4], 0 ]
-        elseif len(date) == 6
-            return [ date[0], date[1], date[2], date[3], date[4], date[5] ]
-        else
-            return [ 0, 0, 0, 0, 0, 0 ]
-        endif
+        " Constructs a full 6-key datetime.
+        let date = s:init_datetime()
+        if has_key(a:date,'year')   | let date.year   = a:date.year   | endif
+        if has_key(a:date,'month')  | let date.month  = a:date.month  | endif
+        if has_key(a:date,'day')    | let date.day    = a:date.day    | endif
+        if has_key(a:date,'hour')   | let date.hour   = a:date.hour   | endif
+        if has_key(a:date,'minute') | let date.minute = a:date.minute | endif
+        if has_key(a:date,'second') | let date.second = a:date.second | endif
+        return date
     endfunction
     "}}}
     "{{{ function: s:ordinal_suffix
@@ -109,14 +113,14 @@
     function! s:days_in_month(month,year)
         " Returns the number of days in the month of the year.
         if a:month == 2 && s:is_leap(a:year) | return 29 | endif
-        let days_in_month = [-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        let days_in_month = [-1,31,28,31,30,31,30,31,31,30,31,30,31]
         return days_in_month[a:month]
     endfunction
     "}}}
     "{{{ function: s:days_before_month
     function! s:days_before_month(month, year)
-        " Returns the number of days in the year preceding first of the month.
-        let days_in_month = [-1, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+        " Returns the number of days in the year preceding first of month.
+        let days_in_month = [-1,31,28,31,30,31,30,31,31,30,31,30,31]
         let days_before_month = [-1]
         let dbm = 0
         for dim in days_in_month[1:]
@@ -126,28 +130,33 @@
         return days_before_month[a:month] + (a:month > 2 && s:is_leap(a:year))
     endfunction
     "}}}
+    "{{{ function: s:day_of_year
+    function! s:day_of_yr(date)
+        return s:days_before_month(a:date.month,a:date.year) + a:date.day
+    endfunction
+    "}}}
 
     "{{{ function: s:date2ord
     function! s:date2ord(date)
-        " Converts a date to an ordinal, considering [1,1,1] as day 1.
-        let dim = s:days_in_month(a:date[1], a:date[0])
-        return s:days_before_year(a:date[0]) 
-               \ + s:days_before_month(a:date[1], a:date[0])
-               \ + a:date[2]
+        " Converts a datetime to a unique ordinal (days since 1,1,1).
+        let dim = s:days_in_month(a:date.month, a:date.year)
+        return s:days_before_year(a:date.year) 
+               \ + s:days_before_month(a:date.month, a:date.year)
+               \ + a:date.day
     endfunction
     "}}}
     "{{{ function: s:ord2date
     function! s:ord2date(ord)
-        " Converts an ordinal to a date, considering [1,1,1] as day 1.
+        " Converts a unique ordinal (days since 1,1,1) to a datetime.
      
-        let di400y = s:days_before_year(401)   " number of days in 400 years
-        let di100y = s:days_before_year(101)   " number of days in 100 years
-        let di4y   = s:days_before_year(5)     " number of days in 4 years 
+        let di400y = s:days_before_year(401) " no. of days in 400 years
+        let di100y = s:days_before_year(101) " no. of days in 100 years
+        let di4y   = s:days_before_year(5)   " no. of days in 4 years 
 
         let ord = a:ord - 1
         let ord400 = ord / di400y
         let ord = ord % di400y
-        let year = ord400 * 400 + 1        " ..., -399, 1, 401, ...
+        let year = ord400 * 400 + 1          " ..., -399, 1, 401, ...
 
         let ord100 = ord / di100y
         let ord = ord % di100y
@@ -161,7 +170,7 @@
         let year += ord100 * 100 + ord4 * 4 + ord1
 
         if ord1 == 4 || ord100 == 4
-            return [ year - 1, 12 ,31 ]
+            return s:init_datetime( year - 1, 12 ,31 )
         endif
 
         let month = (ord + 50) / 32
@@ -174,7 +183,7 @@
 
         let ord -= preceding
 
-        return [ year, month, ord+1 ]
+        return s:init_datetime( year, month, ord+1 )
             
     endfunction
     "}}}
@@ -193,9 +202,9 @@
         let ord = s:date2ord(a:date)
         let ord += a:inc
         let new_date = s:ord2date(ord)
-        if len(a:date) == 6
-            let new_date += [ a:date[3], a:date[4], a:date[5] ]
-        endif
+        let new_date.hour = a:date.hour
+        let new_date.minute = a:date.minute
+        let new_date.second = a:date.second
         return new_date
     endfunction
     "}}}
@@ -204,40 +213,40 @@
         " Adds inc seconds to datetime.
         let dt = s:validate_date(a:date)
         let new_dt = copy(dt)
-        let new_dt[5] += a:inc
+        let new_dt.second += a:inc
 
         " echo new_dt
 
-        if new_dt[5] > 59
-            let new_dt[4] += new_dt[5] / 60
-            let new_dt[5]  = new_dt[5] % 60
-            if new_dt[4] > 59
-                let new_dt[3] += new_dt[4] / 60
-                let new_dt[4]  = new_dt[4] % 60
-                if new_dt[3] > 23
-                    let inc_days  = new_dt[3] / 24
-                    let new_dt[3] = new_dt[3] % 24
-                    let date = s:add_day( dt[0:2], inc_days )
-                    let new_dt[0] = date[0]
-                    let new_dt[1] = date[1]
-                    let new_dt[2] = date[2]
+        if new_dt.second > 59
+            let new_dt.minute += new_dt.second / 60
+            let new_dt.second  = new_dt.second % 60
+            if new_dt.minute > 59
+                let new_dt.hour += new_dt.minute / 60
+                let new_dt.minute  = new_dt.minute % 60
+                if new_dt.hour > 23
+                    let inc_days  = new_dt.hour / 24
+                    let new_dt.hour = new_dt.hour % 24
+                    let date = s:add_day( new_dt, inc_days )
+                    let new_dt.year = date.year
+                    let new_dt.month = date.month
+                    let new_dt.day = date.day
                 endif
             endif
         endif
         
-        if new_dt[5] < 0
-            let new_dt[4] -= ( 60 - new_dt[5] ) / 60
-            let new_dt[5]  = 60 + new_dt[5] % 60
-            if new_dt[4] < 0
-                let new_dt[3] -= ( 60 - new_dt[4] ) / 60
-                let new_dt[4]  = 60 + new_dt[4] % 60
-                if new_dt[3] < 0
-                    let inc_days = ( 24 - new_dt[3] ) / 24
-                    let new_dt[3] = 24 + new_dt[3] % 60
-                    let date = s:add_day( dt[0:2], - inc_days )
-                    let new_dt[0] = date[0]
-                    let new_dt[1] = date[1]
-                    let new_dt[2] = date[2]
+        if new_dt.second < 0
+            let new_dt.minute -= ( 60 - new_dt.second ) / 60
+            let new_dt.second  = 60 + new_dt.second % 60
+            if new_dt.minute < 0
+                let new_dt.hour -= ( 60 - new_dt.minute ) / 60
+                let new_dt.minute  = 60 + new_dt.minute % 60
+                if new_dt.hour < 0
+                    let inc_days = ( 24 - new_dt.hour ) / 24
+                    let new_dt.hour = 24 + new_dt.hour % 60
+                    let date = s:add_day( new_dt, - inc_days )
+                    let new_dt.year = date.year
+                    let new_dt.month = date.month
+                    let new_dt.day = date.day
                 endif
             endif
         endif
@@ -267,6 +276,8 @@
             return '\d\d'
         elseif a:tag ==# '%S'
             return '\d\d'
+        elseif a:tag ==# '%f'
+            return '\d\+'
         endif
     endfunction
     "}}}
@@ -291,6 +302,8 @@
             return str2nr(a:str)
         elseif a:tag ==# '%S'
             return str2nr(a:str)
+        elseif a:tag ==# '%f'
+            return str2nr(a:str)
         endif
     endfunction
     "}}}
@@ -298,113 +311,102 @@
     function! s:decode_tagmap(tag)
         " Returns the expected position of a tag in a datetime list.
         if a:tag ==# '%Y'
-            return 0
+            return 'year'
         elseif a:tag ==# '%b'
-            return 1
+            return 'month'
         elseif a:tag ==# '%B'
-            return 1
+            return 'month'
         elseif a:tag ==# '%m'
-            return 1
+            return 'month'
         elseif a:tag ==# '%d'
-            return 2
+            return 'day'
         elseif a:tag ==# '%H'
-            return 3
+            return 'hour'
         elseif a:tag ==# '%I'
-            return 3
+            return 'hour'
         elseif a:tag ==# '%M'
-            return 4
+            return 'minute'
         elseif a:tag ==# '%S'
-            return 5
+            return 'second'
+        " elseif a:tag ==# '%f'
+        "     return 'subsecond'
         endif
     endfunction
     "}}}
     "{{{ function: s:encode_element
     function! s:encode_element(date,tag)
         " Extracts an element of the datetime specified by the tag.
-        if len(a:date) == 0 | return '' | endif
-        if a:tag ==# '%y'
-            return string(a:date[0])[2:3]
-        endif
-        if a:tag ==# '%Y'
-            return string(a:date[0])
-        endif
-        if a:tag ==# '%p'
-            let hr = a:date[0] == 12 ? 12 : a:date[0] % 12
-            return a:date[0] > 12 ? 'PM' : 'AM'
-        endif
-        if len(a:date) == 1 | return '' | endif
-        if a:tag ==# '%b'
-            return s:month_name(a:date[1])
-        endif
-        if a:tag ==# '%B'
-            return s:month_name(a:date[1],1)
-        endif
-        if a:tag ==# '%m'
-            return s:pad(a:date[1],'00')
-        endif
-        if len(a:date) == 2 | return '' | endif
-        if a:tag ==# '%d'
-            return s:pad(a:date[2],'00')
-        endif
-        if a:tag ==# '%a'
+
+        let elements = s:init_datetime()
+        for kk in keys(elements)
+            let elements[kk] = has_key(a:date,kk)
+        endfor
+
+        if a:tag ==# '%y' && elements.year
+            return string(a:date.year)[2:3]
+        elseif a:tag ==# '%Y' && elements.year
+            return string(a:date.year)
+        elseif a:tag ==# '%p' && elements.year
+            let hr = a:date.hr == 12 ? 12 : a:date.hr % 12
+            return hr > 12 ? 'PM' : 'AM'
+        elseif a:tag ==# '%b' && elements.month
+            return s:month_name(a:date.month)
+        elseif a:tag ==# '%B' && elements.month
+            return s:month_name(a:date.month,1)
+        elseif a:tag ==# '%m' && elements.month
+            return s:pad(a:date.month,'00')
+        elseif a:tag ==# '%d' && elements.day
+            return s:pad(a:date.day,'00')
+        elseif a:tag ==# '%a' && element.day
             return s:day_of_date(a:date)
-        endif
-        if a:tag ==# '%A'
+        elseif a:tag ==# '%A' && element.day
             return s:day_of_date(a:date,1)
-        endif
-        if a:tag ==# '%j'
-            let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
-            return s:pad(day_of_yr,'000')
-        endif
-        if a:tag ==# '%U'
+        elseif a:tag ==# '%j' && element.day
+            return s:pad(s:day_of_yr(a:date),'000')
+        elseif a:tag ==# '%U' && element.day
             " Week number of year (Sunday as first day of week).
-            let day1 = s:day_nr(s:day_of_date([a:date[0],1,1]))-1
-            let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
-            return s:pad( (day_of_yr+day1) / 7, '00')
-        endif
-        if a:tag ==# '%w'
+            let day_index = s:day_nr(s:day_of_date([a:date.year,1,1]))-1
+            let day_of_yr = s:day_of_yr(a:date)
+            return s:pad( (day_of_yr + day_index) / 7, '00')
+        elseif a:tag ==# '%w' && element.day
             return s:date2ord(a:date) % 7
-        endif
-        if a:tag ==# '%W'
+        elseif a:tag ==# '%W' && element.day
             " Week number of year (Monday as first day of week).
-            let day1 = s:day_nr(s:day_of_date([a:date[0],1,1]))-2
-            let day_of_yr = s:days_before_month(a:date[1],a:date[0]) + a:date[2]
-            return s:pad( (day_of_yr+day1) / 7, '00')
-        endif
-        if len(a:date) == 3 | return '' | endif
-        if a:tag ==# '%H'
-            return s:pad(a:date[3],'00')
-        endif
-        if a:tag ==# '%I'
-            let hr = a:date[3] == 12 ? 12 : a:date[3] % 12
+            let day_index = s:day_nr(s:day_of_date([a:date.year,1,1]))-2
+            let day_of_yr = s:day_of_yr(a:date)
+            return s:pad( (day_of_yr + day_index) / 7, '00')
+        elseif a:tag ==# '%H' && elements.hour
+            return s:pad(a:date.hour,'00')
+        elseif a:tag ==# '%I' && elements.hour
+            let hr = a:date.hour == 12 ? 12 : a:date.hour % 12
             return s:pad(hr,'00')
-        endif
-        if len(a:date) == 4 | return '' | endif
-        if a:tag ==# '%M'
-            return s:pad(a:date[4], '00')
-        endif
-        if len(a:date) == 5 | return '' | endif
-        if a:tag ==# '%S'
-            return s:pad(a:date[5], '00')
+        elseif a:tag ==# '%M' && elements.minute
+            return s:pad(a:date.minute, '00')
+        elseif a:tag ==# '%S' && elements.second
+            return s:pad(a:date.second, '00')
+        elseif a:tag ==# '%s' && elements.second
+            return string(datetime#unixtime(a:date))
+        " elseif a:tag ==# '%f' && has_key(a:date,'subsecond')
+        "     return s:pad(a:date.subsecond, '000')
         endif
     endfunction
     "}}}
 
     "{{{ function: s:date_difference
     function! s:date_difference(d1,d2)
-        " Returns a date difference in days.
+        " Returns a date difference in days. Time keys are ignored.
         let ord1 = s:date2ord(a:d1)
         let ord2 = s:date2ord(a:d2)
         return str2nr(ord2) - str2nr(ord1)
     endfunction
     "}}}
     "{{{ function: s:time_difference
-    function! s:time_difference(t1,t2)
-        " Returns a time difference in seconds.
+    function! s:time_difference(dt1,dt2)
+        " Returns a time difference in seconds. Date keys are ignored.
         let difference = 0
-        let difference += (a:t2[0] - a:t1[0]) * 60 * 60
-        let difference += (a:t2[1] - a:t1[1]) * 60
-        let difference += (a:t2[2] - a:t1[2])
+        let difference += (a:dt2.hour   - a:dt1.hour)   * 60 * 60
+        let difference += (a:dt2.minute - a:dt1.minute) * 60
+        let difference += (a:dt2.second - a:dt1.second)
         return difference
     endfunction
     "}}}
@@ -412,10 +414,10 @@
     "{{{ function: s:strptime_auto
     function! s:strptime_auto(str)
         " Tries to guess the some common date/time formats.
-        let date = []
-        let time = []
+        let date = {}
+        let time = {}
         let date_formats = [ '%d-%b-%Y',   '%d-%m-%Y', '%d-%B-%Y',
-                           \ '%d/%m/%Y',   '%d/%m/%Y',
+                           \ '%d/%m/%Y',
                            \ '%Y/d-%b-%Y', '%Y-%m-%d', '%Y-%b-%d',
                            \ ]
         let time_formats = [ '%H:%M:%S' ]
@@ -428,13 +430,14 @@
             if !empty(time) | break | endif
         endfor
         if empty(date) && empty(time)
-            return []
+            return {}
         elseif empty(date)
-            let date = [0,0,0,0,0,0]
+            let date = s:init_datetime()
         elseif empty(time)
-            let time = [0,0,0,0,0,0]
+            let time = s:init_datetime()
         endif
-        return [ date[0], date[1], date[2], time[3], time[4], time[5] ]
+        return s:init_datetime( date.year, date.month, date.day, 
+                            \ time.hour, time.minute, time.second )
     endfunction
     "}}}
     "{{{ function: s:strptime
@@ -443,11 +446,10 @@
         let tags = 'YbBmdjHIMS'
         let requested = []
         let fmt = substitute(a:fmt,'%%','__VIM__DUMMY__PERCENT__','g')
-        let fmt = substitute(fmt,'\C%c','%a %b %d %Y','g')
-        let fmt = substitute(fmt,'\C%x','%d/%m/%Y','g')
+        let fmt = substitute(fmt,'\C%c','%x %X','g')
+        let fmt = substitute(fmt,'\C%x','%d-%m-%Y','g')
         let fmt = substitute(fmt,'\C%X','%H:%M:%S','g')
         let tagmap = [] " maps from tag position in fmt to list position
-        " echo fmt
         for xtag in map(split(tags,'\.*'),'"%".v:val')
             if fmt =~# xtag
                 let regex = s:regex_of_tag(xtag)
@@ -461,7 +463,7 @@
         let matches = matchlist( a:str, fmt )
 
         if empty(matches) || empty(matches[0])
-            return []
+            return {}
         endif
 
         let matches = matches[1:len(requested)]
@@ -478,17 +480,17 @@
         endwhile
         let requested = ordered
 
-        let datetime = [ 0, 0, 0, 0, 0, 0 ]
+        let datetime = s:init_datetime()
         for xx in range(0,len(requested)-1)
             let decoded = s:decode_str2nr( requested[xx], matches[xx] ) 
-            let tmap = s:decode_tagmap( requested[xx] )
-            " echo requested[xx] ' ==> [' decoded '] ==> [' tmap ']'
-            let datetime[tmap] = decoded
+            let tkey = s:decode_tagmap( requested[xx] )
+            " echo requested[xx] ' ==> [' decoded '] ==> [' tkey ']'
+            let datetime[tkey] = decoded
         endfor
 
-        if datetime[-1] == 0 && datetime[-2] == 0 && datetime[-3] == 0
-            let datetime = datetime[0:2]
-        endif
+        " if !datetime.hour && !datetime.minute && !datetime.second
+        "     let datetime = datetime[0:2]
+        " endif
 
         return datetime
     endfunction
@@ -497,17 +499,11 @@
     function! s:strftime(date,fmt)
         " Converts a datetime to a string.
         let fmt = a:fmt
-        if len(a:date) == 3
-            let fmt = substitute(fmt,'\C%c','%a %b %d %Y','g')
-            let fmt = substitute(fmt,'\C%x','%d/%m/%Y','g')
-            let fmt = substitute(fmt,'\C%X','','g')
-        elseif len(a:date) == 6
-            let fmt = substitute(fmt,'\C%c','%a %b %d %H:%M:%S %Y','g')
-            let fmt = substitute(fmt,'\C%x','%d/%m/%Y','g')
-            let fmt = substitute(fmt,'\C%X','%H:%M:%S','g')
-        endif
+        let fmt = substitute(fmt,'\C%c','%x %X','g')
+        let fmt = substitute(fmt,'\C%x','%d-%m-%Y','g')
+        let fmt = substitute(fmt,'\C%X','%H:%M:%S','g')
         let str = substitute(fmt,'%%','__VIM__DUMMY__PERCENT__','g')
-        let tags = 'yYpbBmdaAjUwWHIMS'
+        let tags = 'yYpbBmdaAjUwWHIMSs'
         for xtag in map(split(tags,'\.*'),'"%".v:val')
             if str =~# xtag
                 let enc = s:encode_element(a:date,xtag)
@@ -554,15 +550,21 @@
     "{{{ function: datetime#month_range
     function! datetime#month_range( date )
         " Returns the month range (1st-nth day) of the datetime
-        let dim = s:days_in_month( a:date[1], a:date[0] )
-        return [ [ a:date[0], a:date[1], 1 ], [ a:date[0], a:date[1], dim ] ]
+        let dim = s:days_in_month( a:date.month, a:date.year )
+        return [ s:init_datetime( a:date.year, a:date.month, 1 ), 
+                 s:init_datetime( a:date.year, a:date.month, dim) ]
     endfunction
     "}}}
     "{{{ function: datetime#compare
-    function! datetime#compare(dt1,dt2)
+    function! datetime#compare(dt1,dt2,...)
         " May be used to sort a list of dates
-        let dt1 = s:validate_date(a:dt1)
-        let dt2 = s:validate_date(a:dt2)
+        let fmt = a:0 > 1 ? a:1 : ''
+
+        let dt1 = type(a:dt1) == 1 ? datetime#strptime(a:dt1,fmt) : a:dt1
+        let dt2 = type(a:dt2) == 1 ? datetime#strptime(a:dt2,fmt) : a:dt2
+
+        let dt1 = s:validate_date(dt1)
+        let dt2 = s:validate_date(dt2)
 
         let d_nr1 = str2nr(s:strftime(dt1,"%Y%m%d%H%M%S"))
         let d_nr2 = str2nr(s:strftime(dt2,"%Y%m%d%H%M%S"))
@@ -577,19 +579,19 @@
     endfunction
     "}}}
     "{{{ function: datetime#delta
-    function! datetime#delta(d1,d2)
-        " Returns number of days between d1 and d2
-        let d1 = s:validate_date(a:d1)
-        let d2 = s:validate_date(a:d2)
-        let date_diff = s:date_difference(d1[0:2],d2[0:2])
-        let time_diff = s:time_difference(d1[3:5],d2[3:5])
+    function! datetime#delta(dt1,dt2)
+        " Returns number of days and seconds between dt1 and dt2
+        let dt1 = s:validate_date(a:dt1)
+        let dt2 = s:validate_date(a:dt2)
+        let date_diff = s:date_difference(dt1,dt2)
+        let time_diff = s:time_difference(dt1,dt2)
         return [ date_diff, time_diff ]
     endfunction
     "}}}
     "{{{ function: datetime#unixtime
     function! datetime#unixtime(date)
         " Convert to number of seconds since [ 1970, 1, 1, 0, 0, 0 ]
-        let epoch = [ 1970, 1, 1, 0, 0, 0 ]
+        let epoch = s:init_datetime( 1970, 1, 1 )
         if datetime#compare(epoch,a:date) > 0
             return -1
         else
@@ -599,12 +601,21 @@
     endfunction
     "}}}
 
+    "{{{ function: datetime#init
+    function! datetime#init(year,month,day,...)
+        " Construct a datetime directly from a set of integers.
+        return s:init_datetime( a:year, a:month, a:day,
+                              \ a:0 > 0 ? a:1 : 0,
+                              \ a:0 > 1 ? a:2 : 0,
+                              \ a:0 > 2 ? a:3 : 0,
+                              \ )
+    endfunction
+    "}}}
     "{{{ function: datetime#strptime
     function! datetime#strptime(...)
-        " Converts a string to a datetime.
-        " Defaults to guessing the format of the current line.
-        let str = a:0 > 0 ? a:1 : "."
-        let fmt = a:0 > 1 ? a:2 : ""
+        " Constructs a datetime from a string and a format.
+        let str = a:0 > 0 ? a:1 : "."           " default to current line
+        let fmt = a:0 > 1 ? a:2 : ""            " default to auto format
         if str == "." || str == "$" || type(str) == 0
             let str = getline(str)
         endif
@@ -614,16 +625,22 @@
     "{{{ function: datetime#strftime
     function! datetime#strftime(date,...)
         " Converts a datetime to a formatted string.
+        if type(a:date) != 4
+            echohl ErrorMsg
+            echo "Expected a datetime dictionary."
+            echohl NONE
+            return ''
+        endif
         let fmt = a:0 > 0 ? a:1 : '%c'
         return s:strftime(a:date,fmt)
     endfunction
     "}}}
     "{{{ function: datetime#reformat
     function! datetime#reformat(str,fmt1,fmt2)
-        " Receives a string in fmt1, returns a string in fmt2.
-        let str  = empty(a:str)  ? "."  : a:str
-        let fmt1 = empty(a:fmt1) ? "%c" : a:fmt1
-        let fmt2 = empty(a:fmt2) ? "%c" : a:fmt2
+        " Receives a string in fmt1; returns a string in fmt2.
+        let str  = empty(a:str)  ? "."  : a:str   " default to current line  
+        let fmt1 = empty(a:fmt1) ? "" : a:fmt1    " default to auto format
+        let fmt2 = empty(a:fmt2) ? "%c" : a:fmt2  " default to %c
         let date = datetime#strptime(str,fmt1)
         return datetime#strftime(date,fmt2)
     endfunction
