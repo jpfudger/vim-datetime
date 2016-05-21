@@ -336,55 +336,49 @@
     "{{{ function: s:encode_element
     function! s:encode_element(date,tag)
         " Extracts an element of the datetime specified by the tag.
-
-        let elements = s:init_datetime()
-        for kk in keys(elements)
-            let elements[kk] = has_key(a:date,kk)
-        endfor
-
-        if a:tag ==# '%y' && elements.year
+        if a:tag ==# '%y' && has_key(a:date,'year')
             return string(a:date.year)[2:3]
-        elseif a:tag ==# '%Y' && elements.year
+        elseif a:tag ==# '%Y' && has_key(a:date,'year')
             return string(a:date.year)
-        elseif a:tag ==# '%p' && elements.year
+        elseif a:tag ==# '%p' && has_key(a:date,'year')
             let hr = a:date.hr == 12 ? 12 : a:date.hr % 12
             return hr > 12 ? 'PM' : 'AM'
-        elseif a:tag ==# '%b' && elements.month
+        elseif a:tag ==# '%b' && has_key(a:date,'month')
             return s:month_name(a:date.month)
-        elseif a:tag ==# '%B' && elements.month
+        elseif a:tag ==# '%B' && has_key(a:date,'month')
             return s:month_name(a:date.month,1)
-        elseif a:tag ==# '%m' && elements.month
+        elseif a:tag ==# '%m' && has_key(a:date,'month')
             return s:pad(a:date.month,'00')
-        elseif a:tag ==# '%d' && elements.day
+        elseif a:tag ==# '%d' && has_key(a:date,'day')
             return s:pad(a:date.day,'00')
-        elseif a:tag ==# '%a' && element.day
+        elseif a:tag ==# '%a' && has_key(a:date,'day')
             return s:day_of_date(a:date)
-        elseif a:tag ==# '%A' && element.day
+        elseif a:tag ==# '%A' && has_key(a:date,'day')
             return s:day_of_date(a:date,1)
-        elseif a:tag ==# '%j' && element.day
+        elseif a:tag ==# '%j' && has_key(a:date,'day')
             return s:pad(s:day_of_yr(a:date),'000')
-        elseif a:tag ==# '%U' && element.day
+        elseif a:tag ==# '%U' && has_key(a:date,'day')
             " Week number of year (Sunday as first day of week).
             let day_index = s:day_nr(s:day_of_date([a:date.year,1,1]))-1
             let day_of_yr = s:day_of_yr(a:date)
             return s:pad( (day_of_yr + day_index) / 7, '00')
-        elseif a:tag ==# '%w' && element.day
+        elseif a:tag ==# '%w' && has_key(a:date,'day')
             return s:date2ord(a:date) % 7
-        elseif a:tag ==# '%W' && element.day
+        elseif a:tag ==# '%W' && has_key(a:date,'day')
             " Week number of year (Monday as first day of week).
             let day_index = s:day_nr(s:day_of_date([a:date.year,1,1]))-2
             let day_of_yr = s:day_of_yr(a:date)
             return s:pad( (day_of_yr + day_index) / 7, '00')
-        elseif a:tag ==# '%H' && elements.hour
+        elseif a:tag ==# '%H' && has_key(a:date,'hour')
             return s:pad(a:date.hour,'00')
-        elseif a:tag ==# '%I' && elements.hour
+        elseif a:tag ==# '%I' && has_key(a:date,'hour')
             let hr = a:date.hour == 12 ? 12 : a:date.hour % 12
             return s:pad(hr,'00')
-        elseif a:tag ==# '%M' && elements.minute
+        elseif a:tag ==# '%M' && has_key(a:date,'minute')
             return s:pad(a:date.minute, '00')
-        elseif a:tag ==# '%S' && elements.second
+        elseif a:tag ==# '%S' && has_key(a:date,'second')
             return s:pad(a:date.second, '00')
-        elseif a:tag ==# '%s' && elements.second
+        elseif a:tag ==# '%s' && has_key(a:date,'second')
             return string(datetime#unixtime(a:date))
         " elseif a:tag ==# '%f' && has_key(a:date,'subsecond')
         "     return s:pad(a:date.subsecond, '000')
