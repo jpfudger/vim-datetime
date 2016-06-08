@@ -430,13 +430,20 @@
                            \ '%d/%m/%Y',
                            \ '%Y/d-%b-%Y', '%Y-%m-%d', '%Y-%b-%d',
                            \ ]
+
+        let str = a:str
+
+        " Convert all lower/uppers words to title case:
+        let str = substitute( str, '\<\u\zs\(\u\+\)\>', '\L\1\E', 'g' )
+        let str = substitute( str, '\<\(\l\)\ze\l\+\>', '\U\1\E', 'g' )
+
         let time_formats = [ '%H:%M:%S' ]
         for fmt in date_formats
-            let date = s:strptime(a:str,fmt)
+            let date = s:strptime(str,fmt)
             if !empty(date) | break | endif
         endfor
         for fmt in time_formats
-            let time = s:strptime(a:str,fmt)
+            let time = s:strptime(str,fmt)
             if !empty(time) | break | endif
         endfor
         if empty(date) && empty(time)
