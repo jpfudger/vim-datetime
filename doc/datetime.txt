@@ -51,10 +51,10 @@ FUNCTIONS                                       *datetime-functions*
       It returns the standard Vim difference convention:
             {dt1} == {dt2}  :  0
             {dt1} >  {dt2}  :  1
-            {dt1} <  {dt2}  : -2
+            {dt1} <  {dt2}  : -1
 
   datetime#delta({dt1},{dt2})                   *datetime#delta()*
-      Returns the difference between two datetimes.
+      Returns the difference between two datetimes ({dt2} - {dt1}).
       A delta is a 2-element list consisting of the date difference (in days)
       followed by the time difference (in seconds). 
       One or both of these elements may be negative.
@@ -77,6 +77,10 @@ FUNCTIONS                                       *datetime-functions*
 
 FORMATTING DIRECTIVES                           *datetime-format*
 
+  Where possible the supported formatting directives agree with the Python
+  datetime package. Exceptions are %D (for ordinal day of the month) and
+  %s (for unix time).
+
   %y    Year without century                 00,...,99        *datetime-%y*
   %Y    Year with century as a decimal       1970,2001        *datetime-%Y*
   %p    AM or PM                             AM,PM            *datetime-%p*
@@ -84,6 +88,7 @@ FORMATTING DIRECTIVES                           *datetime-format*
   %B    Month as full name                   January,April    *datetime-%B*
   %m    Month as zero-padded decimal         01,...,12        *datetime-%m*
   %d    Day of the month                     01,...,31        *datetime-%d*
+  %D    Day of the month with ordinal        1st,...,31st     *datetime-%D*
   %a    Weekday as abbreviated name          Sun,Mon          *datetime-%a*
   %A    Weekday as full name                 Sunday,Monday    *datetime-%A*
   %j    Day of the year                      001,...,366      *datetime-%j*
@@ -105,22 +110,23 @@ FORMATTING DIRECTIVES                           *datetime-format*
 
 LIMITATIONS                                     *datetime-limitations*
 
-  Currently divisions of time smaller than a second are not supported. This
-  would require allowing the value of the 'second' key to be a real, rather
-  than an integer. Alternatively another integer-valued key could be added,
-  representing centi-/milli-/micro-seconds.
+  Currently divisions of time smaller than a second are not supported.
+  This would require adding another integer-valued key could be added,
+  representing centi-/milli-/micro-seconds. This change should probably
+  be protected by an global option.
 
   Leap seconds and locales are not supported.
 
 
 CHANGELOG                                       *datetime-changelog*
 
-  Git Source: https://github.com/prince-goulash
+  Git Source: http://github.com/jpfudger/vim-datetime
   Shamelessly ported from the source code of the Python datetime package:
-    https://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
+    http://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
 
   18-May-2016     First release.
   19-May-2016     Add |datetime#reformat()|.
   20-May-2016     Change list do dictionary and add |datetime#init()|.
+  08-Jun-2016     Add support for %s in strptime and %D in strftime.
 
 vim:tw=78:ts=8:ft=help

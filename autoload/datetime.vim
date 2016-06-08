@@ -188,6 +188,52 @@
     endfunction
     "}}}
 
+    "{{{ function: s:rationalise
+    function! s:rationalise(dt)
+        let dt = copy(a:dt)
+
+        " This function fixes a datetime object if the "seconds" field
+        " is invalid (i.e. not in the range [0,59]).
+
+        " It could be enhanced to fix invalid values in other fields.
+
+        if dt.second > 59
+            let dt.minute += dt.second / 60
+            let dt.second  = dt.second % 60
+            if dt.minute > 59
+                let dt.hour += dt.minute / 60
+                let dt.minute  = dt.minute % 60
+                if dt.hour > 23
+                    let inc_days  = dt.hour / 24
+                    let dt.hour = dt.hour % 24
+                    let date = s:add_day( dt, inc_days )
+                    let dt.year = date.year
+                    let dt.month = date.month
+                    let dt.day = date.day
+                endif
+            endif
+        endif
+        
+        if dt.second < 0
+            let dt.minute -= ( 60 - dt.second ) / 60
+            let dt.second  = 60 + dt.second % 60
+            if dt.minute < 0
+                let dt.hour -= ( 60 - dt.minute ) / 60
+                let dt.minute  = 60 + dt.minute % 60
+                if dt.hour < 0
+                    let inc_days = ( 24 - dt.hour ) / 24
+                    let dt.hour = 24 + dt.hour % 60
+                    let date = s:add_day( dt, - inc_days )
+                    let dt.year = date.year
+                    let dt.month = date.month
+                    let dt.day = date.day
+                endif
+            endif
+        endif
+
+        return dt
+    endfunction
+    "}}}
     "{{{ function: s:day_of_date
     function! s:day_of_date(date,...)
         " Given a datetime, returns its day name.
@@ -212,46 +258,8 @@
     function! s:add_second(date,inc)
         " Adds inc seconds to datetime.
         let dt = s:validate_date(a:date)
-        let new_dt = copy(dt)
-        let new_dt.second += a:inc
-
-        " echo new_dt
-
-        if new_dt.second > 59
-            let new_dt.minute += new_dt.second / 60
-            let new_dt.second  = new_dt.second % 60
-            if new_dt.minute > 59
-                let new_dt.hour += new_dt.minute / 60
-                let new_dt.minute  = new_dt.minute % 60
-                if new_dt.hour > 23
-                    let inc_days  = new_dt.hour / 24
-                    let new_dt.hour = new_dt.hour % 24
-                    let date = s:add_day( new_dt, inc_days )
-                    let new_dt.year = date.year
-                    let new_dt.month = date.month
-                    let new_dt.day = date.day
-                endif
-            endif
-        endif
-        
-        if new_dt.second < 0
-            let new_dt.minute -= ( 60 - new_dt.second ) / 60
-            let new_dt.second  = 60 + new_dt.second % 60
-            if new_dt.minute < 0
-                let new_dt.hour -= ( 60 - new_dt.minute ) / 60
-                let new_dt.minute  = 60 + new_dt.minute % 60
-                if new_dt.hour < 0
-                    let inc_days = ( 24 - new_dt.hour ) / 24
-                    let new_dt.hour = 24 + new_dt.hour % 60
-                    let date = s:add_day( new_dt, - inc_days )
-                    let new_dt.year = date.year
-                    let new_dt.month = date.month
-                    let new_dt.day = date.day
-                endif
-            endif
-        endif
-
-        return new_dt
+        let dt.second += a:inc
+        return s:rationalise(dt)
     endfunction
     "}}}
 
@@ -276,6 +284,8 @@
             return '\d\d'
         elseif a:tag ==# '%S'
             return '\d\d'
+        elseif a:tag ==# '%s'
+            return '\d\+'
         elseif a:tag ==# '%f'
             return '\d\+'
         endif
@@ -301,6 +311,8 @@
         elseif a:tag ==# '%M'
             return str2nr(a:str)
         elseif a:tag ==# '%S'
+            return str2nr(a:str)
+        elseif a:tag ==# '%s'
             return str2nr(a:str)
         elseif a:tag ==# '%f'
             return str2nr(a:str)
@@ -328,6 +340,8 @@
             return 'minute'
         elseif a:tag ==# '%S'
             return 'second'
+        elseif a:tag ==# '%s'
+            return 'second'
         " elseif a:tag ==# '%f'
         "     return 'subsecond'
         endif
@@ -351,6 +365,8 @@
             return s:pad(a:date.month,'00')
         elseif a:tag ==# '%d' && has_key(a:date,'day')
             return s:pad(a:date.day,'00')
+        elseif a:tag ==# '%D' && has_key(a:date,'day')
+            return s:ordinal_suffix(a:date.day)
         elseif a:tag ==# '%a' && has_key(a:date,'day')
             return s:day_of_date(a:date)
         elseif a:tag ==# '%A' && has_key(a:date,'day')
@@ -437,7 +453,7 @@
     "{{{ function: s:strptime
     function! s:strptime(str,fmt)
         " Converts a string to a datetime.
-        let tags = 'YbBmdjHIMS'
+        let tags = 'YbBmdjHIMSs'
         let requested = []
         let fmt = substitute(a:fmt,'%%','__VIM__DUMMY__PERCENT__','g')
         let fmt = substitute(fmt,'\C%c','%x %X','g')
@@ -475,16 +491,24 @@
         let requested = ordered
 
         let datetime = s:init_datetime()
-        for xx in range(0,len(requested)-1)
-            let decoded = s:decode_str2nr( requested[xx], matches[xx] ) 
-            let tkey = s:decode_tagmap( requested[xx] )
-            " echo requested[xx] ' ==> [' decoded '] ==> [' tkey ']'
-            let datetime[tkey] = decoded
-        endfor
-
-        " if !datetime.hour && !datetime.minute && !datetime.second
-        "     let datetime = datetime[0:2]
-        " endif
+        if index(requested,'%s') > -1
+            " special case for converting from unix time
+            if len(requested) == 1
+                let unixtime = str2nr( matchstr( a:str, '\d\+' ) )
+                let datetime = s:init_datetime(1970,1,1,0,0,unixtime)
+                let datetime = s:rationalise(datetime)
+            else
+                echo "Unix time must be sole formatter"
+                return {}
+            endif
+        else
+            for xx in range(0,len(requested)-1)
+                let decoded = s:decode_str2nr( requested[xx], matches[xx] ) 
+                let tkey = s:decode_tagmap( requested[xx] )
+                " echo requested[xx] ' ==> [' decoded '] ==> [' tkey ']'
+                let datetime[tkey] = decoded
+            endfor
+        endif
 
         return datetime
     endfunction
@@ -497,7 +521,7 @@
         let fmt = substitute(fmt,'\C%x','%d-%m-%Y','g')
         let fmt = substitute(fmt,'\C%X','%H:%M:%S','g')
         let str = substitute(fmt,'%%','__VIM__DUMMY__PERCENT__','g')
-        let tags = 'yYpbBmdaAjUwWHIMSs'
+        let tags = 'yYpbBmdDaAjUwWHIMSs'
         for xtag in map(split(tags,'\.*'),'"%".v:val')
             if str =~# xtag
                 let enc = s:encode_element(a:date,xtag)
@@ -596,12 +620,15 @@
     "}}}
 
     "{{{ function: datetime#init
-    function! datetime#init(year,month,day,...)
+    function! datetime#init(...)
         " Construct a datetime directly from a set of integers.
-        return s:init_datetime( a:year, a:month, a:day,
+        return s:init_datetime(
                               \ a:0 > 0 ? a:1 : 0,
                               \ a:0 > 1 ? a:2 : 0,
                               \ a:0 > 2 ? a:3 : 0,
+                              \ a:0 > 3 ? a:4 : 0,
+                              \ a:0 > 4 ? a:5 : 0,
+                              \ a:0 > 5 ? a:6 : 0,
                               \ )
     endfunction
     "}}}
