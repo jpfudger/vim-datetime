@@ -142,6 +142,21 @@
         let g:dt1 = datetime#strptime(g:str)
         call DATETIME_verify( g:dt1, 2003, 1, 15, 0, 0, 0 )
 
+    call TEST_log("single digit day")
+        let g:str = 'blah 1-DEC-2000 blah'
+        let g:dt1 = datetime#strptime(g:str)
+        call DATETIME_verify( g:dt1, 2000, 12, 1, 0, 0, 0 )
+
+    call TEST_log("single digit month")
+        let g:str = 'blah 1-1-1999 blah'
+        let g:dt1 = datetime#strptime(g:str)
+        call DATETIME_verify( g:dt1, 1999, 1, 1, 0, 0, 0 )
+
+    call TEST_log("single digit month ^")
+        let g:str = '1-1-1999 blah'
+        let g:dt1 = datetime#strptime(g:str)
+        call DATETIME_verify( g:dt1, 1999, 1, 1, 0, 0, 0 )
+
     call TEST_conclude()
   
     " vim:tw=78:ts=8:ft=vim:fmr="{{{,"}}}:fdm=marker

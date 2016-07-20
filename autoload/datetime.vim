@@ -437,6 +437,11 @@
         let str = substitute( str, '\<\u\zs\(\u\+\)\>', '\L\1\E', 'g' )
         let str = substitute( str, '\<\(\l\)\ze\l\+\>', '\U\1\E', 'g' )
 
+        " Prepend all single digits with 0:
+        let str = substitute( str, '\D\zs\(\d\)\ze\D', '0\1', 'g' )
+        let str = substitute( str, '\<\zs\(\d\)\ze\D', '0\1', 'g' )
+        let str = substitute( str, '\D\zs\(\d\)\ze\>', '0\1', 'g' )
+
         let time_formats = [ '%H:%M:%S' ]
         for fmt in date_formats
             let date = s:strptime(str,fmt)
