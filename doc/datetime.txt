@@ -74,6 +74,10 @@ FUNCTIONS                                       *datetime-functions*
       Return a list of two datetimes corresponding to the Monday - Friday
       range containing the supplied datetime.   
 
+  datetime#getftime({fname})                    *datetime#getftime()*
+      Return a datetime corresponding to the last modification time of
+      the given file {fname}. Uses Vim's built-in |strftime()|.
+
 
 FORMATTING DIRECTIVES                           *datetime-format*
 
@@ -126,7 +130,9 @@ CHANGELOG                                       *datetime-changelog*
 
   18-May-2016     First release.
   19-May-2016     Add |datetime#reformat()|.
-  20-May-2016     Change list do dictionary and add |datetime#init()|.
+  20-May-2016     Change list to dictionary and add |datetime#init()|.
   08-Jun-2016     Add support for %s in strptime and %D in strftime.
+  20-Jul-2016     Support single digits in input strings.
+  23-Jul-2016     Add |datetime#getftime()|.
 
 vim:tw=78:ts=8:ft=help

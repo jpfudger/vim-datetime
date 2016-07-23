@@ -631,6 +631,15 @@
     endfunction
     "}}}
 
+    "{{{ function: datetime#getftime
+    function! datetime#getftime(path)
+        " Calls Vim's own getftime and converts it to datetime.
+        let datestr = strftime('%d-%b-%Y %H:%M:%S',getftime(a:path))
+        let dt = datetime#strptime(datestr,'%d-%b-%Y %H:%M:%S')
+        return dt
+    endfunction
+    "}}}
+
     "{{{ function: datetime#init
     function! datetime#init(...)
         " Construct a datetime directly from a set of integers.

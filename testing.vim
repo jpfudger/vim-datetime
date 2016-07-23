@@ -12,6 +12,27 @@
         call add(g:TEST_logs[-1],result)
     endfunction
     "}}}
+    "{{{ function: DATETIME_validate
+    function! DATETIME_validate(date)
+        let result = 0
+        if a:date.year < 0
+            let result = 0
+        elseif a:date.month < 1 || a:date.month > 12
+            let result = 0
+        elseif a:date.day < 1 || a:date.day > 31
+            let result = 0
+        elseif a:date.hour < 0 || a:date.hour > 23
+            let result = 0
+        elseif a:date.minute < 0 || a:date.minute > 59
+            let result = 0
+        elseif a:date.second < 0 || a:date.second > 59
+            let result = 0
+        else
+            let result = 1
+        endif
+        call add(g:TEST_logs[-1],result)
+    endfunction
+    "}}}
     "{{{ function: TEST_verify
     function! TEST_verify( actual, expected )
         let result = a:actual == a:expected
@@ -156,6 +177,11 @@
         let g:str = '1-1-1999 blah'
         let g:dt1 = datetime#strptime(g:str)
         call DATETIME_verify( g:dt1, 1999, 1, 1, 0, 0, 0 )
+
+    call TEST_log("getftime")
+        let g:str = expand("%:p")
+        let g:dt1 = datetime#getftime(g:str)
+        call DATETIME_validate(g:dt1)
 
     call TEST_conclude()
   
