@@ -3,7 +3,7 @@
     " Author: Jonathan Fudger
     " Date:   17 May 2016
     " Shamelessly ported from the Python datetime package implementation
-    " https://fossies.org/dox/Python-3.5.1/datetime_8py_source.html
+    " http://fossies.org/dox/Python-3.5.2/datetime_8py_source.html
 
     if exists('g:loaded_datetime') || &compatible
         finish
