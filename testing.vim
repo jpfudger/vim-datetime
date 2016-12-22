@@ -2,30 +2,43 @@
 
     "{{{ function: DATETIME_verify
     function! DATETIME_verify(date,year,month,day,hour,minute,second)
+        let g:datetime = deepcopy(a:date)
         let result = 1
-        if a:date.year   != a:year   | let result = 0 | endif
-        if a:date.month  != a:month  | let result = 0 | endif
-        if a:date.day    != a:day    | let result = 0 | endif
-        if a:date.hour   != a:hour   | let result = 0 | endif
-        if a:date.minute != a:minute | let result = 0 | endif
-        if a:date.second != a:second | let result = 0 | endif
+        if has_key(a:date, 'year')   && a:date.year   != a:year
+            let result = 0
+        endif
+        if has_key(a:date, 'month')  && a:date.month  != a:month
+            let result = 0
+        endif
+        if has_key(a:date, 'day')    && a:date.day    != a:day
+            let result = 0
+        endif
+        if has_key(a:date, 'hour')   && a:date.hour   != a:hour
+            let result = 0
+        endif
+        if has_key(a:date, 'minute') && a:date.minute != a:minute
+            let result = 0
+        endif
+        if has_key(a:date, 'second') && a:date.second != a:second
+            let result = 0
+        endif
         call add(g:TEST_logs[-1],result)
     endfunction
     "}}}
     "{{{ function: DATETIME_validate
     function! DATETIME_validate(date)
         let result = 0
-        if a:date.year < 0
+        if has_key( a:date, 'year' ) && a:date.year < 0
             let result = 0
-        elseif a:date.month < 1 || a:date.month > 12
+        elseif has_key( a:date, 'month' ) && ( a:date.month < 1 || a:date.month > 12 )
             let result = 0
-        elseif a:date.day < 1 || a:date.day > 31
+        elseif has_key( a:date, 'day' ) && ( a:date.day < 1 || a:date.day > 31 )
             let result = 0
-        elseif a:date.hour < 0 || a:date.hour > 23
+        elseif has_key( a:date, 'hour' ) && ( a:date.hour < 0 || a:date.hour > 23 )
             let result = 0
-        elseif a:date.minute < 0 || a:date.minute > 59
+        elseif has_key( a:date, 'minute' ) && ( a:date.minute < 0 || a:date.minute > 59 )
             let result = 0
-        elseif a:date.second < 0 || a:date.second > 59
+        elseif has_key( a:date, 'second' ) && ( a:date.second < 0 || a:date.second > 59 )
             let result = 0
         else
             let result = 1
