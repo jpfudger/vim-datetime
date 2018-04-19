@@ -76,7 +76,7 @@ FUNCTIONS                                       *datetime-functions*
 
   datetime#getftime({fname})                    *datetime#getftime()*
       Return a datetime corresponding to the last modification time of
-      the given file {fname}. Uses Vim's built-in |strftime()|.
+      the given file {fname}. Uses Vim's built-in |getftime()|.
 
 
 FORMATTING DIRECTIVES                           *datetime-format*
