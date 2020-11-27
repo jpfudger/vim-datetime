@@ -196,6 +196,16 @@
         let g:dt1 = datetime#getftime(g:str)
         call DATETIME_validate(g:dt1)
 
+    call TEST_log("custom format full month")
+        let g:str = 'blah Mon November 23 20:02:05 2020 blah'
+        let g:dt1 = datetime#strptime(g:str, '%B %d %H:%M:%S %Y')
+        call DATETIME_verify( g:dt1, 2020, 11, 23, 20, 2, 5)
+
+    call TEST_log("complex format short month")
+        let g:str = 'blah Mon Nov 23 20:02:05 2020 blah'
+        let g:dt1 = datetime#strptime(g:str, '%b %d %H:%M:%S %Y')
+        call DATETIME_verify( g:dt1, 2020, 11, 23, 20, 2, 5)
+
     call TEST_conclude()
   
     " vim:tw=78:ts=8:ft=vim:fmr="{{{,"}}}:fdm=marker

@@ -472,10 +472,11 @@
         let fmt = substitute(fmt,'\C%x','%d-%m-%Y','g')
         let fmt = substitute(fmt,'\C%X','%H:%M:%S','g')
         let tagmap = [] " maps from tag position in fmt to list position
+        let orig_fmt = fmt
         for xtag in map(split(tags,'\.*'),'"%".v:val')
-            if fmt =~# xtag
+            if orig_fmt =~# xtag
                 let regex = s:regex_of_tag(xtag)
-                call add(tagmap,match(fmt,'\C'.xtag))
+                call add(tagmap,match(orig_fmt,'\C'.xtag))
                 call add(requested,xtag)
                 let regex = escape( '\(' . regex . '\)', '\' )
                 let fmt = substitute(fmt, '\C'.xtag, regex, 'g')
@@ -491,14 +492,14 @@
         let matches = matches[1:len(requested)]
 
         " need put the requests in the order they appear in the fmt
-        let ordered = repeat([-1],len(tagmap))
-        let xx = 0
-        while xx < len(tagmap)
+        let ordered = []
+        while len(tagmap) > 0
             let cmin = min(tagmap)
             let cmindex = index(tagmap,cmin)
-            let tagmap[cmindex] = 9999999
-            let ordered[cmindex] = requested[xx]
-            let xx += 1
+            "echo cmin cmindex requested[cmindex]
+            call add(ordered, requested[cmindex])
+            call remove(tagmap,cmindex)
+            call remove(requested,cmindex)
         endwhile
         let requested = ordered
 
